@@ -415,9 +415,24 @@ type
     type_ : Uint8;        // SDL_VIDEOEXPOSE
   end;
 
+  // ----------------------------------------
+  PPSDL_Rect = ^PSDL_Rect;
+  PSDL_Rect = ^TSDL_Rect;
+  TSDL_Rect = record
+    x, y: SInt16;
+    w, h: UInt16;
+  end;
+
+  SDL_Rect = TSDL_Rect;
+
+ {$IFDEF ANDROID}
+  TSDL_SysWm = ( SDL_SYSWM_ANDROID_CLIPBOARD_CHANGED,
+                 SDL_SYSWM_ANDROID_SCREEN_VISIBLE_RECT ) ;
+ {$ELSE}
  {$IFDEF UNIX}
  //These are the various supported subsystems under UNIX
   TSDL_SysWm = ( SDL_SYSWM_X11 ) ;
+ {$ENDIF}
  {$ENDIF}
 
 // The windows custom event structure
@@ -431,7 +446,18 @@ type
     lParam: LPARAM; // LONG message parameter
   end;
 {$ELSE}
-
+{$IFDEF ANDROID}
+{ The Android custom event structure }
+  TAndroidEvent = record
+    screenVisibleRect : TSDL_Rect;
+  end;
+  PSDL_SysWMmsg = ^TSDL_SysWMmsg;
+  TSDL_SysWMmsg = record
+    version : TSDL_version;
+    subsystem : TSDL_SysWm;
+    event : TAndroidEvent;
+  end;
+{$ELSE}
 {$IFDEF UNIX}
 { The Linux custom event structure }
   PSDL_SysWMmsg = ^TSDL_SysWMmsg;
@@ -455,12 +481,23 @@ type
 
 {$ENDIF}
 
+{$ENDIF}
+
 // The Windows custom window manager information structure
 {$IFDEF WINDOWS}
   PSDL_SysWMinfo = ^TSDL_SysWMinfo;
   TSDL_SysWMinfo = record
     version : TSDL_version;
     window : HWnd;	// The display window
+  end;
+{$ELSE}
+
+// The Android custom window manager information structure
+{$IFDEF ANDROID}
+  PSDL_SysWMinfo = ^TSDL_SysWMinfo;
+  TSDL_SysWMinfo = record
+    version : TSDL_version ;
+    data : integer;
   end;
 {$ELSE}
 
@@ -507,6 +544,8 @@ type
 
 {$ENDIF}
 
+{$ENDIF}
+
   PSDL_SysWMEvent = ^TSDL_SysWMEvent;
   TSDL_SysWMEvent = record
     type_: UInt8;
@@ -540,14 +579,6 @@ type
 
   // SDL_video.h types
   // Useful data types
-  PPSDL_Rect = ^PSDL_Rect;
-  PSDL_Rect = ^TSDL_Rect;
-  TSDL_Rect = record
-    x, y: SInt16;
-    w, h: UInt16;
-  end;
-
-  SDL_Rect = TSDL_Rect;
 
   PSDL_Color = ^TSDL_Color;
   TSDL_Color = record
