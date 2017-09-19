@@ -54,7 +54,7 @@ function SDLIOEventFilter(event: PSDL_Event) : Integer; cdecl;
 
 implementation
 
-uses vgllibrary, vglulibrary,
+uses vgllibrary,
      {Screenshot support}
      FPImage, FPCanvas,
      FPWritePNG;
@@ -293,10 +293,7 @@ begin
   inherited Create;
   LoadSDL;
   if SDLIO_OpenGL in aFlags then
-  begin
     LoadGL;
-    LoadGLu;
-  end;
 
   Log('Initializing SDL...');
 
@@ -365,15 +362,21 @@ begin
 
   if SDLIO_Resizable in aFlags then iSDLFlags := iSDLFlags or SDL_RESIZABLE;
 
-  Log('Checking mode %dx%d/%dbit...', [aWidth,aHeight,aBPP]);
+  Log('Checking mode %dx%d/%dbit. flags:%04x', [aWidth,aHeight,aBPP,iSDLFlags]);
 
   if aBPP <> SDL_VideoModeOK( aWidth, aHeight, aBPP, iSDLFlags ) then Exit( False );
 
   if FOpenGL then
   begin
+    {$IFDEF ANDROID}
+    SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
+    SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 6 );
+    SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
+    {$ELSE}
     SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );
     SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
     SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 8 );
+    {$ENDIF}
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
   end;
