@@ -338,8 +338,10 @@ function LoadFMOD ( const aPath : AnsiString ) : Boolean;
 begin
   if FMOD <> nil then Exit( True );
 
+  {$if defined(cpui8086) or defined(cpui386) or defined(cpux86_64)}
   Saved8087CW := Default8087CW;
   Set8087CW($133f); { Disable all fpu exceptions }
+  {$endif}
 
   FMOD := TLibrary.Load( aPath );
   if FMOD = nil then Exit( False );
@@ -604,7 +606,9 @@ finalization
   if FMOD <> nil then
   begin
     FreeAndNil( FMOD );
+    {$if defined(cpui8086) or defined(cpui386) or defined(cpux86_64)}
     Set8087CW(Saved8087CW);
+    {$endif}
   end;
 
 end.
