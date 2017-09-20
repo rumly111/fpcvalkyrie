@@ -12,10 +12,12 @@ const
   {$IFDEF WINDOWS}
     LuaDefaultPath = 'lua5.1.dll';
   {$ELSE}
-    {$IFDEF DARWIN}
+    {$IF DEFINED(DARWIN)}
       LuaDefaultPath = 'lua5.1.dylib';
+    {$ELSEIF DEFINED(ANDROID)}
+      LuaDefaultPath = 'liblua.so';
     {$ELSE}
-      LuaDefaultPath = 'lua5.1.so';
+      LuaDefaultPath = 'liblua5.1.so';
     {$ENDIF}
   {$ENDIF}
 {$ELSE}

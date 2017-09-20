@@ -8,9 +8,11 @@ uses Classes, SysUtils, Types, vlibrary,
   Windows;
 {$ENDIF}
 {$IFDEF UNIX}
-  pthreads,
+  {$IFNDEF ANDROID}
+     pthreads,
+  {$ENDIF}
   baseunix,
-  {$IFDEF DARWIN}
+  {$if defined(DARWIN) or defined(ANDROID)}
      unix;
   {$ELSE}
      unix, x, xlib;
@@ -21,12 +23,14 @@ const
 {$IFDEF WINDOWS}
   SDLDefaultPath = 'SDL.dll';
 {$ELSE}
-  {$IFDEF DARWIN}
+  {$IF DEFINED(DARWIN)}
     SDLDefaultPath = 'SDL.framework/SDL';
     {$linklib SDLmain}
     {$linkframework Cocoa}
     {$linkframework SDL}
     {$PASCALMAINNAME SDL_main}
+  {$ELSEIF DEFINED(ANDROID)}
+  SDLDefaultPath = 'libsdl-1.2.so';
   {$ELSE}
   SDLDefaultPath = 'libSDL-1.2.so.0';
   {$ENDIF}

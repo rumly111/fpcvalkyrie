@@ -11,8 +11,10 @@ const
 {$IFDEF WINDOWS}
   SDLTTFDefaultPath = 'SDL_ttf.dll';
 {$ELSE}
-  {$IFDEF DARWIN}
+  {$IF DEFINED(DARWIN)}
   SDLTTFDefaultPath = 'SDL_ttf.framework/SDL_ttf';
+  {$ELSEIF DEFINED(ANDROID)}
+  SDLTTFDefaultPath = 'libsdl_ttf.so';
   {$ELSE}
   SDLTTFDefaultPath = 'libSDL_ttf-2.0.so.0';
   {$ENDIF}

@@ -11,8 +11,10 @@ const
 {$IFDEF WINDOWS}
   SDLImageDefaultPath = 'SDL_image.dll';
 {$ELSE}
-  {$IFDEF DARWIN}
+  {$IF DEFINED(DARWIN)}
   SDLImageDefaultPath = 'SDL_image.framework/SDL_image';
+  {$ELSEIF DEFINED(ANDROID)}
+  SDLImageDefaultPath = 'libsdl_image.so';
   {$ELSE}
   SDLImageDefaultPath = 'libSDL_image-1.2.so.0';
   {$ENDIF}

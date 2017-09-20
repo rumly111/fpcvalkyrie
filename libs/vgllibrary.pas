@@ -8,8 +8,10 @@ const
 {$IFDEF WINDOWS}
   GLDefaultPath = 'opengl32.dll';
 {$ELSE}
-  {$IFDEF DARWIN}
+  {$IF DEFINED(DARWIN)}
   GLDefaultPath = '/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib';
+  {$ELSEIF DEFINED(ANDROID)}
+  GLDefaultPath = 'libGLESv1_CM.so';
   {$ELSE}
   GLDefaultPath = 'libGL.so.1';
   {$ENDIF}

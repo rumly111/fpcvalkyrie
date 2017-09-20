@@ -9,8 +9,10 @@ const
 {$IFDEF WINDOWS}
   SDLMixerDefaultPath = 'SDL_mixer.dll';
 {$ELSE}
-  {$IFDEF DARWIN}
+  {$IF DEFINED(DARWIN)}
   SDLMixerDefaultPath = 'SDL_mixer.framework/SDL_mixer';
+  {$ELSEIF DEFINED(ANDROID)}
+  SDLMixerDefaultPath = 'libsdl_mixer.so';
   {$ELSE}
   SDLMixerDefaultPath = 'libSDL_mixer-1.2.so.0';
   {$ENDIF}
