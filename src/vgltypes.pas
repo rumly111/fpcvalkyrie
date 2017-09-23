@@ -18,7 +18,7 @@ type
 
   TGLRawQCoord    = specialize TGVectorQuad<TGLVec2i,Integer>;
   TGLRawQTexCoord = specialize TGVectorQuad<TGLVec2f,Single>;
-  TGLRawQColor    = specialize TGVectorQuad<TGLVec3b,Byte>;
+  TGLRawQColor    = specialize TGVectorQuad<TGLVec4b,Byte>;
   TGLRawQColor4f  = specialize TGVectorQuad<TGLVec4f,Single>;
 
   PGLRawQCoord    = ^TGLRawQCoord;
@@ -26,6 +26,7 @@ type
   PGLRawQColor    = ^TGLRawQColor;
 
   TGLByteColor    = TGLVec3b;
+  TGLByteColor4   = TGLVec4b;
   TGLFloatColor   = TGLVec3f;
   TGLFloatColor4  = TGLVec4f;
 

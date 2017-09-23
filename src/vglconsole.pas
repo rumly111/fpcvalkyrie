@@ -327,7 +327,7 @@ begin
     glEnableClientState( GL_COLOR_ARRAY );
 
     glVertexPointer( 2, GL_INT, 0, @(FBCoords[0]) );
-    glColorPointer( 3, GL_UNSIGNED_BYTE, 0, @(FBColors[0]) );
+    glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(FBColors[0]) );
     glDrawArrays( GL_QUADS, 0, iCount*4 );
   end;
 
@@ -347,7 +347,7 @@ begin
 
     glVertexPointer( 2, GL_INT, 0, @(FCoords[0]) );
     glTexCoordPointer( 2, GL_FLOAT, 0, @(FTexCoords[0]) );
-    glColorPointer( 3, GL_UNSIGNED_BYTE, 0, @(FColors[0]) );
+    glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(FColors[0]) );
     glDrawArrays( GL_QUADS, 0, iCount*4 );
   end;
 
@@ -421,7 +421,7 @@ end;
 
 procedure TGLConsoleRenderer.CreateColor( out aQColor : TGLRawQColor; aR, aG, aB : Byte );
 begin
-  aQColor.SetAll( TGLByteColor.Create( aR, aG, aB) );
+  aQColor.SetAll( TGLByteColor4.Create( aR, aG, aB, 255) );
 end;
 
 function TGLConsoleRenderer.GetSupportedCapabilities : TIOConsoleCapSet;

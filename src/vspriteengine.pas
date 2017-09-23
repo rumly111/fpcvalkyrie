@@ -169,7 +169,7 @@ begin
   t2 := tp.Shifted(1) * FEngine.FTexUnit;
 
   FTexCoords[ FSize ].Init( t1, t2 );
-  FColors[ FSize ].SetAll( TGLVec3b.Create( Color.R, Color.G, Color.B ) );
+  FColors[ FSize ].SetAll( TGLVec4b.Create( Color.R, Color.G, Color.B, Color.A ) );
 
   Inc( FSize );
 end;
@@ -212,7 +212,7 @@ begin
   t2 := tp.Shifted(Size) * FEngine.FTexUnit;
 
   FTexCoords[ FSize ].Init( t1, t2 );
-  FColors[ FSize ].SetAll( TGLVec3b.Create( Color.R, Color.G, Color.B ) );
+  FColors[ FSize ].SetAll( TGLVec4b.Create( Color.R, Color.G, Color.B, Color.A ) );
   Inc( FSize );
 end;
 
@@ -259,7 +259,7 @@ begin
 
   glVertexPointer( 2, GL_INT, 0, @(Data.FCoords[0]) );
   glTexCoordPointer( 2, GL_FLOAT, 0, @(Data.FTexCoords[0]) );
-  glColorPointer( 3, GL_UNSIGNED_BYTE, 0, @(Data.FColors[0]) );
+  glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(Data.FColors[0]) );
   glDrawArrays( GL_QUADS, 0, Data.FSize*4 );
 
   glDisableClientState( GL_VERTEX_ARRAY );
@@ -354,7 +354,7 @@ initialization
   Assert( SizeOf( Single )  = SizeOf( GLFloat ) );
   Assert( SizeOf( TGLRawQCoord )    = 8 * SizeOf( GLInt ) );
   Assert( SizeOf( TGLRawQTexCoord ) = 8 * SizeOf( GLFloat ) );
-  Assert( SizeOf( TGLRawQColor )    = 12 * SizeOf( GLByte ) );
+  Assert( SizeOf( TGLRawQColor )    = 16 * SizeOf( GLByte ) );
 
 end.
 
