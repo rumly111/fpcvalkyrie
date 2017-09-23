@@ -257,7 +257,7 @@ begin
   glEnableClientState( GL_TEXTURE_COORD_ARRAY );
   glEnableClientState( GL_COLOR_ARRAY );
 
-  glVertexPointer( 2, GL_INT, 0, @(Data.FCoords[0]) );
+  glVertexPointer( 2, GL_SHORT, 0, @(Data.FCoords[0]) );
   glTexCoordPointer( 2, GL_FLOAT, 0, @(Data.FTexCoords[0]) );
   glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(Data.FColors[0]) );
   glDrawArrays( GL_QUADS, 0, Data.FSize*4 );

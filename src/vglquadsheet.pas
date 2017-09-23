@@ -124,7 +124,7 @@ end;
 
 procedure TGLColoredQuadList.Draw;
 begin
-  glVertexPointer( 2, GL_INT, 0, @(FCoords[0]) );
+  glVertexPointer( 2, GL_SHORT, 0, @(FCoords[0]) );
   glColorPointer( 4, GL_FLOAT, 0, @(FColors[0]) );
   glDrawArrays( GL_QUADS, 0, FCount*4 );
   FCount := 0;
@@ -173,7 +173,7 @@ end;
 
 procedure TGLTexturedQuadList.Draw;
 begin
-  glVertexPointer( 2, GL_INT, 0, @(FCoords[0]) );
+  glVertexPointer( 2, GL_SHORT, 0, @(FCoords[0]) );
   glColorPointer( 4, GL_FLOAT, 0, @(FColors[0]) );
   glTexCoordPointer( 2, GL_FLOAT, 0, @(FTexCoords[0]) );
   glDrawArrays( GL_QUADS, 0, FCount*4 );

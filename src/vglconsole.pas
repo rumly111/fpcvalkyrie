@@ -326,7 +326,7 @@ begin
     glEnableClientState( GL_VERTEX_ARRAY );
     glEnableClientState( GL_COLOR_ARRAY );
 
-    glVertexPointer( 2, GL_INT, 0, @(FBCoords[0]) );
+    glVertexPointer( 2, GL_SHORT, 0, @(FBCoords[0]) );
     glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(FBColors[0]) );
     glDrawArrays( GL_QUADS, 0, iCount*4 );
   end;
@@ -345,7 +345,7 @@ begin
     glEnableClientState( GL_COLOR_ARRAY );
     glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-    glVertexPointer( 2, GL_INT, 0, @(FCoords[0]) );
+    glVertexPointer( 2, GL_SHORT, 0, @(FCoords[0]) );
     glTexCoordPointer( 2, GL_FLOAT, 0, @(FTexCoords[0]) );
     glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(FColors[0]) );
     glDrawArrays( GL_QUADS, 0, iCount*4 );

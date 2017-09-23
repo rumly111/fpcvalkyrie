@@ -126,11 +126,11 @@ type
   TVec4b = specialize TGVec4<Byte>;
   PVec4b = ^TVec4b;
 
-  TVec2i = specialize TGVec2<LongInt>;
+  TVec2i = specialize TGVec2<SmallInt>;
   PVec2i = ^TVec2i;
-  TVec3i = specialize TGVec3<LongInt>;
+  TVec3i = specialize TGVec3<SmallInt>;
   PVec3i = ^TVec3i;
-  TVec4i = specialize TGVec4<LongInt>;
+  TVec4i = specialize TGVec4<SmallInt>;
   PVec4i = ^TVec4i;
 
   generic TGVectorQuad<T,TE> = packed object
