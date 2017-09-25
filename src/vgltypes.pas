@@ -16,10 +16,10 @@ type
   TGLVec3b        = TVec3b;
   TGLVec4b        = TVec4b;
 
-  TGLRawQCoord    = specialize TGVectorQuad<TGLVec2i,Integer>;
-  TGLRawQTexCoord = specialize TGVectorQuad<TGLVec2f,Single>;
-  TGLRawQColor    = specialize TGVectorQuad<TGLVec4b,Byte>;
-  TGLRawQColor4f  = specialize TGVectorQuad<TGLVec4f,Single>;
+  TGLRawQCoord    = specialize TGVectorTriQuad<TGLVec2i,Integer>;
+  TGLRawQTexCoord = specialize TGVectorTriQuad<TGLVec2f,Single>;
+  TGLRawQColor    = specialize TGVectorTriQuad<TGLVec4b,Byte>;
+  TGLRawQColor4f  = specialize TGVectorTriQuad<TGLVec4f,Single>;
 
   PGLRawQCoord    = ^TGLRawQCoord;
   PGLRawQTexCoord = ^TGLRawQTexCoord;

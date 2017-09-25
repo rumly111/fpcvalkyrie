@@ -328,7 +328,7 @@ begin
 
     glVertexPointer( 2, GL_SHORT, 0, @(FBCoords[0]) );
     glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(FBColors[0]) );
-    glDrawArrays( GL_QUADS, 0, iCount*4 );
+    glDrawArrays( GL_TRIANGLES, 0, iCount*6 );
   end;
 
   begin // foreground rendering
@@ -348,7 +348,7 @@ begin
     glVertexPointer( 2, GL_SHORT, 0, @(FCoords[0]) );
     glTexCoordPointer( 2, GL_FLOAT, 0, @(FTexCoords[0]) );
     glColorPointer( 4, GL_UNSIGNED_BYTE, 0, @(FColors[0]) );
-    glDrawArrays( GL_QUADS, 0, iCount*4 );
+    glDrawArrays( GL_TRIANGLES, 0, iCount*6 );
   end;
 
   glDisableClientState( GL_TEXTURE_COORD_ARRAY );
