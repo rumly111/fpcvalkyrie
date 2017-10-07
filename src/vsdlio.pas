@@ -391,7 +391,7 @@ procedure TSDLIODriver.SetupOpenGL;
 begin
   glShadeModel( GL_SMOOTH );
   glClearColor( 0.0, 0.0, 0.0, 0.0 );
-  glClearDepth( 1.0 );
+  glClearDepthf( 1.0 );
   glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
   glHint( GL_LINE_SMOOTH_HINT,            GL_NICEST );
   glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
