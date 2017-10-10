@@ -2,7 +2,12 @@ unit vglimage;
 {$include valkyrie.inc}
 interface
 uses Classes,
+{$IFDEF USE_SDL2}
+  sdl2,
+  vsdl2library,
+{$ELSE}
   vsdllibrary,
+{$ENDIF}
   vimage;
 
 function LoadImage( const FileName : Ansistring ) : TImage;
@@ -15,7 +20,11 @@ implementation
 
 uses
   vgllibrary,
+{$IFDEF USE_SDL2}
+  vsdl2imagelibrary,
+{$ELSE}
   vsdlimagelibrary,
+{$ENDIF}
   vmath;
 
 function LoadImage( SDLSurface : PSDL_Surface ) : TImage;
@@ -63,13 +72,17 @@ end;
 
 function LoadImage( const FileName: Ansistring ) : TImage;
 begin
+  {$IFNDEF USE_SDL2}
   LoadSDLImage;
+  {$ENDIF}
   Exit( LoadImage( IMG_LoadOrThrow( PChar( Filename ) ) ) );
 end;
 
 function LoadImage( Stream : TStream; Size : DWord ): TImage;
 begin
+  {$IFNDEF USE_SDL2}
   LoadSDLImage;
+  {$ENDIF}
   Exit( LoadImage( IMG_LoadRWOrThrow( SDL_RWopsFromStream( Stream, Size ), 0 ) ) );
 end;
 

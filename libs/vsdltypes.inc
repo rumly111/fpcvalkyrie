@@ -585,7 +585,7 @@ type
     r: UInt8;
     g: UInt8;
     b: UInt8;
-    unused: UInt8;
+    a: UInt8;
   end;
 
   PSDL_ColorArray = ^TSDL_ColorArray;

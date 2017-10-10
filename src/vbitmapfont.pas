@@ -55,7 +55,20 @@ end;
 
 implementation
 
-uses vsdllibrary, vsdlttflibrary, vmath, math;
+uses
+{$IFDEF USE_SDL2}
+  sdl2, sdl2_ttf,
+  vsdl2library, vsdl2ttflibrary,
+{$ELSE}
+  vsdllibrary, vsdlttflibrary,
+{$ENDIF}
+  vmath, math;
+
+{$IFDEF USE_SDL2}
+  {$DEFINE OUTVAR:=@}
+{$ELSE}
+  {$DEFINE OUTVAR:=}
+{$ENDIF}
 
 function CharNameToChar( const aCharName : AnsiString ) : Char;
 begin
@@ -250,8 +263,10 @@ var iFont     : PTTF_Font;
     iPosA     : TGLVec2f;
     iPosB     : TGLVec2f;
 begin
+  {$IFNDEF USE_SDL2}
   LoadSDLTTF;
-  if TTF_WasInit() = 0 then TTF_Init();
+  {$ENDIF}
+  if not Boolean(TTF_WasInit()) then TTF_Init();
 
   FLowerCase := False;
   Prepare( 128 );
@@ -269,7 +284,7 @@ begin
   iColor.r := 255;
   iColor.g := 255;
   iColor.b := 255;
-  iColor.unused := 0;
+  iColor.a := 255;
 
   for iCount := 32 to 127 do
   begin
@@ -302,7 +317,8 @@ begin
   for iCount := 32 to 127 do
   begin
     FGylphs[iCount].Present := True;
-    TTF_GlyphMetrics( iFont, iCount, iGMMinX, iGMMaxX,  iGMMinY, iGMMaxY, iGMAdv );
+    TTF_GlyphMetrics( iFont, iCount, OUTVAR(iGMMinX), OUTVAR(iGMMaxX),
+                      OUTVAR(iGMMinY), OUTVAR(iGMMaxY), OUTVAR(iGMAdv) );
     iRect.x := iX;
     iRect.y := iY;
     iRect.w := iCache[iCount]^.w;
@@ -326,7 +342,7 @@ begin
       iChar3[0] := Chr(iCount2);
       iChar3[1] := Chr(iCount);
       iChar3[2] := #0;
-      TTF_SizeText( iFont, iChar3, iWidth, iUnused );
+      TTF_SizeText( iFont, iChar3, OUTVAR(iWidth), OUTVAR(iUnused) );
       FGylphs[iCount2].Kerning[iCount] := iWidth - iGMAdv;
     end;
   end;

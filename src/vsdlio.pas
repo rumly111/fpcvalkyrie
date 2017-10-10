@@ -1,7 +1,13 @@
 {$INCLUDE valkyrie.inc}
 unit vsdlio;
 interface
-uses Classes, SysUtils, vutil, viotypes, vsdllibrary, vioevent;
+uses Classes, SysUtils, vutil, viotypes, vioevent,
+{$IFDEF USE_SDL2}
+     sdl2,
+     vsdl2library;
+{$ELSE}
+     vsdllibrary;
+{$ENDIF}
 
 type TSDLIOFlag  = ( SDLIO_OpenGL, SDLIO_FullScreen, SDLIO_Resizable );
      TSDLIOFlags = set of TSDLIOFlag;
@@ -37,6 +43,10 @@ private
   FOpenGL   : Boolean;
   FFScreen  : Boolean;
   FOnResize : TIOInterrupt;
+  {$IFDEF USE_SDL2}
+  FWindow   : PSDL_Window;
+  FGLContext: TSDL_GLContext;
+  {$ENDIF}
 public
   property Width : DWord        read FSizeX;
   property Height : DWord       read FSizeY;
@@ -50,7 +60,11 @@ end;
 
 var SDLIO : TSDLIODriver = nil;
 
+{$IFDEF USE_SDL2}
+function SDLIOEventFilter(userdata: Pointer; event: PSDL_Event) : Integer; cdecl;
+{$ELSE}
 function SDLIOEventFilter(event: PSDL_Event) : Integer; cdecl;
+{$ENDIF}
 
 implementation
 
@@ -128,8 +142,21 @@ end;
 
 function SDLKeyEventToIOEvent( event : PSDL_Event ) : TIOEvent;
 var ASCII : Char;
+    KeyCode : Byte;
 begin
+  {$IFDEF USE_SDL2}
+  if event^.type_ = SDL_TEXTINPUT then
+    ASCII := event^.text.text[0]
+  else  // SDL_KEYDOWN or SDL_KEYUP
+    begin
+      ASCII := #0;
+      KeyCode := SDLSymToCode( event^.key.keysym.sym );
+      if not (KeyCode in VKEY_ARROWSET + VKEY_CONTROLSET) then
+        Exit( DummyKeyEvent() );  // we handle "printable" keys through SDL_TEXTINPUT
+    end;
+  {$ELSE}
   ASCII := Char(event^.key.keysym.unicode);
+  {$ENDIF}
   if Ord(ASCII) in VKEY_PRINTABLESET then
   begin
     Result := PrintableToIOEvent( ASCII );
@@ -152,7 +179,50 @@ begin
 
   case event^.type_ of
     SDL_QUITEV      : Result.System.Code := VIO_SYSEVENT_QUIT;
-    SDL_VIDEOEXPOSE : Result.System.Code := VIO_SYSEVENT_EXPOSE;
+    {$IFDEF USE_SDL2}
+    SDL_WINDOWEVENT :
+      case event^.window.event of
+        SDL_WINDOWEVENT_RESIZED:
+          begin
+            Result.System.Code := VIO_SYSEVENT_RESIZE;
+            Result.System.Param1 := event^.window.data1;
+            Result.System.Param2 := event^.window.data2;
+          end;
+        SDL_WINDOWEVENT_EXPOSED:
+          Result.System.Code := VIO_SYSEVENT_EXPOSE;
+        SDL_WINDOWEVENT_ENTER:    // simulation of SDL1.2 behavior
+          begin
+            Result.System.Code := VIO_SYSEVENT_ACTIVE;
+            Result.System.Param1 := 1;
+            Result.System.Param2 := 1;
+          end;
+        SDL_WINDOWEVENT_LEAVE:
+          begin
+            Result.System.Code := VIO_SYSEVENT_ACTIVE;
+            Result.System.Param1 := 0;
+            Result.System.Param2 := 1;
+          end;
+        SDL_WINDOWEVENT_FOCUS_GAINED:
+          begin
+            Result.System.Code := VIO_SYSEVENT_ACTIVE;
+            Result.System.Param1 := 1;
+            Result.System.Param2 := 2;
+          end;
+        SDL_WINDOWEVENT_FOCUS_LOST:
+          begin
+            Result.System.Code := VIO_SYSEVENT_ACTIVE;
+            Result.System.Param1 := 0;
+            Result.System.Param2 := 2;
+          end;
+        else
+          begin
+            Result.System.Code := VIO_SYSEVENT_UNKNOWN;
+            Result.System.Param1 := event^.type_;
+          end;
+      end;
+    {$ELSE}
+    SDL_VIDEOEXPOSE :
+      Result.System.Code := VIO_SYSEVENT_EXPOSE;
     SDL_ACTIVEEVENT :
       begin
         Result.System.Code := VIO_SYSEVENT_ACTIVE;
@@ -165,11 +235,13 @@ begin
         Result.System.Param1 := event^.resize.w;
         Result.System.Param2 := event^.resize.h;
       end;
+    {$ENDIF}
+
     SDL_SYSWMEVENT :
-    begin
-      Result.System.Code := VIO_SYSEVENT_WM;
-      // TODO : Windows messages?
-    end
+      begin
+        Result.System.Code := VIO_SYSEVENT_WM;
+        // TODO : Windows messages?
+      end
     else
       begin
         Result.System.Code := VIO_SYSEVENT_UNKNOWN;
@@ -184,8 +256,10 @@ begin
     SDL_BUTTON_LEFT     : Exit( VMB_BUTTON_LEFT );
     SDL_BUTTON_MIDDLE   : Exit( VMB_BUTTON_MIDDLE );
     SDL_BUTTON_RIGHT    : Exit( VMB_BUTTON_RIGHT );
+    {$IFNDEF USE_SDL2} // handled in SDLMouseWheelEventToIOEvent
     SDL_BUTTON_WHEELUP  : Exit( VMB_WHEEL_UP );
     SDL_BUTTON_WHEELDOWN: Exit( VMB_WHEEL_DOWN );
+    {$ENDIF}
   end;
   Exit( VMB_UNKNOWN );
 end;
@@ -214,6 +288,18 @@ begin
   Result.Mouse.Pressed := event^.button.state = SDL_PRESSED;
 end;
 
+{$IFDEF USE_SDL2}
+function SDLMouseWheelEventToIOEvent( event : PSDL_Event ) : TIOEvent;
+begin
+  // simulating SDL1.2 behavior
+  Result.EType := VEVENT_MOUSEDOWN;
+  if event^.wheel.y > 0 then Result.Mouse.Button := VMB_WHEEL_UP;
+  if event^.wheel.y < 0 then Result.Mouse.Button := VMB_WHEEL_DOWN;
+  SDL_GetMouseState( @Result.Mouse.Pos.X, @Result.Mouse.Pos.Y );
+  Result.Mouse.Pressed := event^.button.state = SDL_PRESSED;
+end;
+{$ENDIF}
+
 function SDLMouseMoveEventToIOEvent( event : PSDL_Event ) : TIOEvent;
 begin
   Result.EType := VEVENT_MOUSEMOVE;
@@ -229,16 +315,26 @@ begin
   case event^.type_ of
     SDL_KEYDOWN : Exit( SDLKeyEventToIOEvent( event ) );
     SDL_KEYUP   : Exit( SDLKeyEventToIOEvent( event ) );
+    {$IFDEF USE_SDL2}
+    SDL_TEXTINPUT : Exit( SDLKeyEventToIOEvent( event ) );
+    {$ENDIF}
 
     SDL_MOUSEMOTION     : Exit( SDLMouseMoveEventToIOEvent( event ) );
     SDL_MOUSEBUTTONDOWN : Exit( SDLMouseEventToIOEvent( event ) );
     SDL_MOUSEBUTTONUP   : Exit( SDLMouseEventToIOEvent( event ) );
+    {$IFDEF USE_SDL2}
+    SDL_MOUSEWHEEL      : Exit( SDLMouseWheelEventToIOEvent( event ) );
+    {$ENDIF}
 
     SDL_JOYAXISMOTION : ;
     SDL_JOYBALLMOTION : ;
     SDL_JOYHATMOTION  : ;
     SDL_JOYBUTTONDOWN,
     SDL_JOYBUTTONUP   : ;
+
+    //{$IFDEF USE_SDL2}
+    //SDL_APP_WILLENTERBACKGROUND: ; // TODO: implement this
+    //{$ENDIF}
     else
       Exit( SDLSystemEventToIOEvent( event ) );
   end;
@@ -246,14 +342,22 @@ begin
   Result.System.Code := VIO_SYSEVENT_NONE;
 end;
 
+{$IFDEF USE_SDL2}
+function SDLIOEventFilter(userdata: Pointer; event: PSDL_Event) : Integer; cdecl;
+{$ELSE}
 function SDLIOEventFilter(event: PSDL_Event) : Integer; cdecl;
+{$ENDIF}
 var iCode : TIOKeyCode;
 begin
   if event^.type_ = SDL_QUITEV then
     if Assigned( SDLIO.FOnQuit ) then
       if SDLIO.FOnQuit( SDLEventToIOEvent( event ) ) then
         Exit(0);
+  {$IFDEF USE_SDL2}
+  if (event^.type_ = SDL_WINDOWEVENT) and (event^.window.event = SDL_WINDOWEVENT_RESIZED) then
+  {$ELSE}
   if event^.type_ = SDL_VIDEORESIZE then
+  {$ENDIF}
     if Assigned( SDLIO.FOnResize ) then
     if SDLIO.FOnResize( SDLEventToIOEvent( event ) ) then
       Exit(0);
@@ -270,7 +374,12 @@ end;
 { TSDLIODriver }
 
 class function TSDLIODriver.GetCurrentResolution ( out aResult : TIOPoint ) : Boolean;
-var info : PSDL_VideoInfo;
+var
+  {$IFDEF USE_SDL2}
+  info : TSDL_DisplayMode;
+  {$ELSE}
+  info : PSDL_VideoInfo;
+  {$ENDIF}
 begin
   LoadSDL;
   if ( SDL_Init(SDL_INIT_VIDEO) < 0 ) then
@@ -280,9 +389,14 @@ begin
     raise EIOException.Create('Couldn''t initialize SDL : '+SDL_GetError());
   end;
 
+  {$IFDEF USE_SDL2}
+  if ( SDL_GetCurrentDisplayMode(0, @info) <> 0 ) then Exit( False );
+  aResult.Init( info.w, info.h );
+  {$ELSE}
   info := SDL_GetVideoInfo();
   if info = nil then Exit( False );
   aResult.Init( info^.current_w, info^.current_h );
+  {$ENDIF}
   Exit( True );
 end;
 
@@ -321,10 +435,12 @@ begin
     Log( LOGINFO, 'OpenGL GLSL Version : %s', [ glGetString(35724) ] );
   end;
 
-
+  {$IFNDEF USE_SDL2}
   SDL_WM_SetCaption('Valkyrie SDL Application','VSDL Application');
 
   SDL_EventState(SDL_ACTIVEEVENT, SDL_IGNORE);
+  {$ENDIF}
+
   SDL_EventState(SDL_KEYUP, SDL_IGNORE);
 //  SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
 //  SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
@@ -333,9 +449,13 @@ begin
 //  SDL_EventState(SDL_VIDEOEXPOSE, SDL_IGNORE);
 //  SDL_EventState(SDL_USEREVENT, SDL_IGNORE);
 
+  {$IFDEF USE_SDL2}
+  SDL_SetEventFilter(@SDLIOEventFilter, nil);
+  {$ELSE}
   SDL_EnableUNICODE(1);
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
   SDL_SetEventFilter(@SDLIOEventFilter);
+  {$ENDIF}
 
   Log('SDL IO system ready.');
 end;
@@ -351,20 +471,21 @@ begin
   FBPP      := aBPP;
   FFlags    := aFlags;
 
+  {$IFDEF USE_SDL2}
+  if FOpenGL  then iSDLFlags := iSDLFlags or SDL_WINDOW_OPENGL;
+  if FFScreen then iSDLFlags := iSDLFlags or SDL_WINDOW_FULLSCREEN;
+  if SDLIO_Resizable in aFlags then iSDLFlags := iSDLFlags or SDL_WINDOW_RESIZABLE;
+  {$ELSE}
   if not FOpenGL then
-  begin
-    iSDLFlags := iSDLFlags or SDL_HWSURFACE;
-    iSDLFlags := iSDLFlags or SDL_DOUBLEBUF;
-  end;
+    begin
+      iSDLFlags := iSDLFlags or SDL_HWSURFACE;
+      iSDLFlags := iSDLFlags or SDL_DOUBLEBUF;
+    end;
 
   if FOpenGL  then iSDLFlags := iSDLFlags or SDL_OPENGL;
   if FFScreen then iSDLFlags := iSDLFlags or SDL_FULLSCREEN;
-
   if SDLIO_Resizable in aFlags then iSDLFlags := iSDLFlags or SDL_RESIZABLE;
-
-  Log('Checking mode %dx%d/%dbit. flags:%04x', [aWidth,aHeight,aBPP,iSDLFlags]);
-
-  if aBPP <> SDL_VideoModeOK( aWidth, aHeight, aBPP, iSDLFlags ) then Exit( False );
+  {$ENDIF}
 
   if FOpenGL then
   begin
@@ -381,7 +502,34 @@ begin
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
   end;
 
+  {$IFDEF USE_SDL2}
+    {$IFDEF ANDROID} // on Android we need fullscreen anyway
+    iSDLFlags := SDL_WINDOW_FULLSCREEN_DESKTOP or SDL_OPENGL;
+    {$ENDIF}
+  FWindow := SDL_CreateWindow('Valkyrie SDL Application',
+                              SDL_WINDOWPOS_UNDEFINED,
+                              SDL_WINDOWPOS_UNDEFINED,
+                              aWidth, aHeight, iSDLFlags);
+  if FWindow = nil then
+    begin
+      Log(LOGERROR, 'Error setting mode %dx%d: %s',
+          [aWidth,aHeight,SDL_GetError()]);
+      Exit( False );
+    end;
+  if FOpenGL then
+    begin
+      FGLContext := SDL_GL_CreateContext(FWindow);
+      if FGLContext = nil then
+        begin
+          Log(LOGERROR, 'Error creating OpenGL context: %s', [SDL_GetError()]);
+          Exit( False );
+        end
+    end;
+  {$ELSE}
+  Log('Checking mode %dx%d/%dbit. flags:%04x', [aWidth,aHeight,aBPP,iSDLFlags]);
+  if aBPP <> SDL_VideoModeOK( aWidth, aHeight, aBPP, iSDLFlags ) then Exit( False );
   if SDL_SetVideoMode( aWidth, aHeight, aBPP, iSDLFlags ) = nil then Exit( False );
+  {$ENDIF}
 
   if FOpenGL then SetupOpenGL;
   Exit( True );
@@ -429,7 +577,11 @@ function TSDLIODriver.PeekEvent ( out aEvent : TIOEvent ) : Boolean;
 var event : TSDL_Event;
 begin
   SDL_PumpEvents();
+  {$IFDEF USE_SDL2}
+  Result := (SDL_PeepEvents( @event, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT ) > 0 );
+  {$ELSE}
   Result := (SDL_PeepEvents( @event, 1, SDL_PEEKEVENT, SDL_ALLEVENTS ) > 0 );
+  {$ENDIF}
   if Result then
     aEvent := SDLEventToIOEvent( @event );
 end;
@@ -438,7 +590,11 @@ function TSDLIODriver.EventPending : Boolean;
 var event : TSDL_Event;
 begin
   SDL_PumpEvents();
+  {$IFDEF USE_SDL2}
+  Result := (SDL_PeepEvents( @event, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT ) > 0 );
+  {$ELSE}
   Result := (SDL_PeepEvents( @event, 1, SDL_PEEKEVENT, SDL_ALLEVENTS ) > 0 );
+  {$ENDIF}
 end;
 
 procedure TSDLIODriver.SetEventMask ( aMask : TIOEventType ) ;
@@ -462,14 +618,24 @@ end;
 
 procedure TSDLIODriver.PostUpdate;
 begin
+  {$IFDEF USE_SDL2}
+  if FOpenGL then
+    SDL_GL_SwapWindow(FWindow);
+  // else ... for now we ignore non-gl rendering with SDL2
+  {$ELSE}
   if FOpenGL then
     SDL_GL_SwapBuffers()
   else
     SDL_Flip( SDL_GetVideoSurface() );
+  {$ENDIF}
 end;
 
 destructor TSDLIODriver.Destroy;
 begin
+  {$IFDEF USE_SDL2}
+  if FOpenGL and (FGLContext <> nil) then
+    SDL_GL_DeleteContext(FGLContext);
+  {$ENDIF}
   inherited Destroy;
 end;
 
@@ -486,9 +652,14 @@ end;
 function TSDLIODriver.GetMousePos ( out aResult : TIOPoint ) : Boolean;
 var x,y : Integer;
 begin
-  if SDL_GetAppState() and SDL_APPMOUSEFOCUS = 0 then Exit( False );
   x := 0; y := 0;
+  {$IFDEF USE_SDL2}
+  if SDL_GetWindowFlags( FWindow ) and SDL_WINDOW_MOUSE_FOCUS = 0 then Exit( False );
+  SDL_GetMouseState(@x,@y);
+  {$ELSE}
+  if SDL_GetAppState() and SDL_APPMOUSEFOCUS = 0 then Exit( False );
   SDL_GetMouseState(x,y);
+  {$ENDIF}
   aResult := Point( x, y );
   Exit( True );
 end;
@@ -497,9 +668,14 @@ function TSDLIODriver.GetMouseButtonState ( out aResult : TIOMouseButtonSet
   ) : Boolean;
 var x,y : Integer;
 begin
-  if SDL_GetAppState() and SDL_APPMOUSEFOCUS = 0 then Exit( False );
   x := 0; y := 0;
+  {$IFDEF USE_SDL2}
+  if SDL_GetWindowFlags( FWindow ) and SDL_WINDOW_MOUSE_FOCUS = 0 then Exit( False );
+  aResult := SDLMouseButtonSetToVMB( SDL_GetMouseState(@x,@y) );
+  {$ELSE}
+  if SDL_GetAppState() and SDL_APPMOUSEFOCUS = 0 then Exit( False );
   aResult := SDLMouseButtonSetToVMB( SDL_GetMouseState(x,y) );
+  {$ENDIF}
   Exit( True );
 end;
 
@@ -511,9 +687,13 @@ end;
 procedure TSDLIODriver.SetTitle ( const aLongTitle : AnsiString;
   const aShortTitle : AnsiString ) ;
 begin
+  {$IFDEF USE_SDL2}
+  SDL_SetWindowTitle(FWindow, PChar(aLongTitle));
+  {$ELSE}
   if aShortTitle = ''
     then SDL_WM_SetCaption(PChar(aLongTitle),PChar(aLongTitle))
     else SDL_WM_SetCaption(PChar(aLongTitle),PChar(aShortTitle));
+  {$ENDIF}
 end;
 
 procedure TSDLIODriver.ShowMouse ( aShow : Boolean ) ;
@@ -521,8 +701,6 @@ begin
   if aShow
     then SDL_ShowCursor(1)
     else SDL_ShowCursor(0);
-
-  SDL_GetVideoInfo()
 end;
 
 procedure TSDLIODriver.ScreenShot ( const aFileName : AnsiString ) ;

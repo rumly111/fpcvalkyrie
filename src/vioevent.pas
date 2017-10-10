@@ -92,6 +92,7 @@ function IOKeyCode( aKey : Byte; aModState : TIOModKeySet ) : TIOKeyCode;
 function IOKeyEventToIOKeyCode( const aKeyEvent : TIOKeyEvent ) : TIOKeyCode;
 function Unshift( aKey : Char ) : Char;
 function PrintableToIOEvent( aKey : Char ) : TIOEvent;
+function DummyKeyEvent : TIOEvent;
 
 implementation
 
@@ -414,7 +415,14 @@ begin
     Result.Key.ModState := [ VKMOD_SHIFT ];
 end;
 
-
+function DummyKeyEvent : TIOEvent;
+begin
+  Result.EType        := VEVENT_KEYUP;
+  Result.Key.Pressed  := False;
+  Result.Key.ASCII    := #0;
+  Result.Key.Code     := 0;
+  Result.Key.ModState := [];
+end;
 
 
 end.

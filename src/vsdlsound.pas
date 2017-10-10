@@ -16,7 +16,12 @@ unit vsdlsound;
 
 interface
 
-uses Classes, SysUtils, vsound, vsdlmixerlibrary, vluaconfig;
+uses Classes, SysUtils, vsound, vluaconfig,
+{$IFDEF USE_SDL2}
+     sdl2_mixer;
+{$ELSE}
+     vsdlmixerlibrary;
+{$ENDIF}
 
 // The basic sound class, published as the singleton @link(Sound).
 // Should be initialized and disposed via TSystems.
@@ -64,7 +69,18 @@ TSDLSound = class(TSound)
 
 implementation
 
-uses vutil, vsdllibrary;
+uses vutil,
+  {$IFDEF USE_SDL2}
+  sdl2, vsdl2library;
+  {$ELSE}
+  vsdllibrary;
+  {$ENDIF}
+
+{$IFDEF USE_SDL2}
+  {$DEFINE OUTVAR:=@}
+{$ELSE}
+  {$DEFINE OUTVAR:=}
+{$ENDIF}
 
 { TSDLSound }
 
@@ -75,7 +91,9 @@ var iFrequency : integer;
     iChunkSize : integer;
 begin
   inherited Create;
+  {$IFNDEF USE_SDL2}
   LoadSDLMixer;
+  {$ENDIF}
   iFrequency := aConfig.Configure( aPrefix + 'frequency', MIX_DEFAULT_FREQUENCY );
   iFormat    := aConfig.Configure( aPrefix + 'sdl_format', MIX_DEFAULT_FORMAT );
   iChannels  := aConfig.Configure( aPrefix + 'sdl_channels', 2 );
@@ -91,7 +109,9 @@ end;
 constructor TSDLSound.Create( frequency : integer = MIX_DEFAULT_FREQUENCY; format : word = MIX_DEFAULT_FORMAT; chunksize : integer = 512 );
 begin
   inherited Create;
+  {$IFNDEF USE_SDL2}
   LoadSDLMixer;
+  {$ENDIF}
   Log( LOGINFO, 'Opening SDL_Audio...' );
   if SDL_Init(SDL_INIT_AUDIO) < 0 then
     raise Exception.Create('Can''t open SDL_Audio!');
@@ -103,12 +123,17 @@ end;
 destructor TSDLSound.Destroy;
 begin
   inherited Destroy;
+{$IFDEF USE_SDL2}
+  Mix_CloseAudio();
+  SDL_Quit();
+{$ELSE}
   if SDL <> nil then
   begin
     if SDL_mixer <> nil then
       Mix_CloseAudio();
     SDL_Quit();
   end;
+{$ENDIF}
 end;
 
 function TSDLSound.OpenDevice(aFrequency: integer; aFormat: Word; aChannels: Integer; aChunkSize: Integer): Boolean;
@@ -121,7 +146,7 @@ begin
     Log( LOGERROR, 'Could not open SDL_Mixer! Error : %s', [Mix_GetError()] );
     Exit( False );
   end;
-  iResult := Mix_QuerySpec(aFrequency,aFormat,aChannels);
+  iResult := Mix_QuerySpec( OUTVAR(aFrequency), OUTVAR(aFormat), OUTVAR(aChannels) );
   Log( LOGINFO, 'SDL_Mixer opened ( freq %d, format %d, channels %d, chunk size %d )', [aFrequency,aFormat,aChannels,aChunkSize] );
   Exit( True );
 end;
@@ -139,14 +164,20 @@ end;
 function TSDLSound.LoadMusicStream(Stream: TStream; Size: DWord; Streamed : Boolean): Pointer;
 var Data : Pointer;
 begin
+  {$IFDEF USE_SDL2}
+    {$DEFINE FREESRC:=,0}
+  {$ELSE}
+    {$DEFINE FREESRC:=}
+  {$ENDIF}
   if Streamed then
   begin
     Data := GetCacheMem( Size );
     Stream.Read( Data^, Size );
-    Exit( Mix_LoadMUS_RW( SDL_RWFromMem( Data, Size ) ) );
+    Exit( Mix_LoadMUS_RW( SDL_RWFromMem( Data, Size ) FREESRC ) );
   end
   else
-    Exit( Mix_LoadMUS_RW( SDL_RWopsFromStream( Stream, Size ) ) );
+    Exit( Mix_LoadMUS_RW( SDL_RWopsFromStream( Stream, Size ) FREESRC ) );
+  {$UNDEF FREESRC}
 end;
 
 function TSDLSound.LoadSoundStream(Stream: TStream; Size: DWord): Pointer;
