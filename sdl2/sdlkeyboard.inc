@@ -11,7 +11,7 @@ type
   TSDL_Keysym = record
     scancode: TSDL_ScanCode;      // SDL physical key code - see SDL_Scancode for details
     sym: TSDL_KeyCode;            // SDL virtual key code - see SDL_Keycode for details
-    _mod: UInt16;                 // current key modifiers
+    modifier: UInt16;             // current key modifiers
     unicode: UInt32;              // (deprecated) use SDL_TextInputEvent instead
   end;
 
@@ -101,7 +101,7 @@ type
    *  SDL_Key
    *}
 
-  function SDL_GetKeyName(key: TSDL_ScanCode): PAnsiChar cdecl; external SDL_LibName {$IFDEF DELPHI} {$IFDEF MACOS} name '_SDL_GetKeyName' {$ENDIF}{$ENDIF};
+  function SDL_GetKeyName(key: TSDL_KeyCode): PAnsiChar cdecl; external SDL_LibName {$IFDEF DELPHI} {$IFDEF MACOS} name '_SDL_GetKeyName' {$ENDIF}{$ENDIF};
 
   {**
    *  Get a key code from a human-readable name

@@ -6,6 +6,9 @@
 
 const
 
+  SDL_RELEASED         = 0;
+  SDL_PRESSED          = 1;
+
   SDL_FIRSTEVENT       = 0;     // Unused (do not remove) (needed in pascal?)
 
   SDL_COMMONEVENT      = 1;     //added for pascal-compatibility
