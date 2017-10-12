@@ -18,6 +18,9 @@ type TSDLIODriver = class( TIODriver )
   constructor Create( aWidth, aHeight, aBPP : Word; aFlags : TSDLIOFlags );
   function ResetVideoMode( aWidth, aHeight, aBPP : Word; aFlags : TSDLIOFlags ) : Boolean;
   procedure SetupOpenGL;
+  {$IFDEF USE_SDL2}
+  function ToggleFullScreen( aWidth, aHeight: Word ) : Boolean;
+  {$ENDIF}
   function PollEvent( out aEvent : TIOEvent ) : Boolean; override;
   function PeekEvent( out aEvent : TIOEvent ) : Boolean; override;
   function EventPending : Boolean; override;
@@ -559,6 +562,34 @@ begin
   glMatrixMode( GL_MODELVIEW );
   glLoadIdentity( );
 end;
+
+{$IFDEF USE_SDL2}
+function TSDLIODriver.ToggleFullScreen( aWidth, aHeight: Word ) : Boolean;
+begin
+  if FWindow = nil then Exit( False );
+  FSizeX := aWidth;
+  FSizeY := aHeight;
+  FFScreen := not FFScreen;
+  if FFScreen then
+    begin
+      Include( FFlags, SDLIO_FullScreen );
+      SDL_SetWindowSize( FWindow, aWidth, aHeight );
+      SDL_SetWindowFullscreen( FWindow, SDL_WINDOW_FULLSCREEN );
+    end
+  else
+    begin
+      Exclude( FFlags, SDLIO_FullScreen );
+      SDL_SetWindowFullscreen( FWindow, 0 );
+      SDL_SetWindowSize( FWindow, aWidth, aHeight );
+    end;
+  glMatrixMode( GL_PROJECTION );
+  glLoadIdentity( );
+  glOrtho(0, FSizeX, FSizeY, 0, -1, 1);
+  glMatrixMode( GL_MODELVIEW );
+  glLoadIdentity( );
+  Exit( True );
+end;
+{$ENDIF}
 
 procedure TSDLIODriver.Sleep ( Milliseconds : DWord ) ;
 begin
