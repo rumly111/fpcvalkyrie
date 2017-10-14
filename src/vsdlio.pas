@@ -507,7 +507,7 @@ begin
 
   {$IFDEF USE_SDL2}
     {$IFDEF ANDROID} // on Android we need fullscreen anyway
-    iSDLFlags := SDL_WINDOW_FULLSCREEN_DESKTOP or SDL_OPENGL;
+    iSDLFlags := SDL_WINDOW_FULLSCREEN_DESKTOP or SDL_WINDOW_OPENGL;
     {$ENDIF}
   FWindow := SDL_CreateWindow('Valkyrie SDL Application',
                               SDL_WINDOWPOS_UNDEFINED,
@@ -584,7 +584,11 @@ begin
     end;
   glMatrixMode( GL_PROJECTION );
   glLoadIdentity( );
+  {$IFDEF ANDROID}
+  glOrthof(0, FSizeX, FSizeY, 0, -1, 1);
+  {$ELSE}
   glOrtho(0, FSizeX, FSizeY, 0, -1, 1);
+  {$ENDIF}
   glMatrixMode( GL_MODELVIEW );
   glLoadIdentity( );
   Exit( True );

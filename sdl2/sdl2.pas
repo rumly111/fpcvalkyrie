@@ -138,13 +138,15 @@ interface
       Windows;
   {$ENDIF}
 
-  {$IFDEF UNIX}
-    uses
-      {$IFDEF DARWIN}
-      CocoaAll,
-      {$ENDIF}
-      X,
-      XLib;
+  {$IFNDEF ANDROID}
+    {$IFDEF UNIX}
+      uses
+        {$IFDEF DARWIN}
+        CocoaAll,
+        {$ENDIF}
+        X,
+        XLib;
+    {$ENDIF}
   {$ENDIF}
 
 const
